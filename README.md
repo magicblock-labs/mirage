@@ -1,7 +1,7 @@
 <div align="center">
   <img src="./openapi/mirage.jpg" width="168" alt="Mirage logo" />
   <h1>@magicblock-labs/mirage</h1>
-  <p>Commander-based CLI for MagicBlock private payments, wallet funding, and Open Wallet Standard workflows.</p>
+  <p>Commander-based CLI for MagicBlock private payments, wallet funding, and Solana transactions.</p>
   <p>
     <a href="https://github.com/magicblock-labs/mirage">Repository</a>
     ·
