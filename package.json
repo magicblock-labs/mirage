@@ -1,0 +1,61 @@
+{
+  "name": "@magicblock-labs/mirage",
+  "version": "0.1.0",
+  "description": "CLI for MagicBlock private payments, wallet funding, and Open Wallet Standard workflows.",
+  "type": "module",
+  "bin": {
+    "mirage": "dist/cli.js"
+  },
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "openapi",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "openapi:generate": "node ./scripts/sync-openapi.mjs ./openapi/payments.openapi.json",
+    "openapi:update": "node ./scripts/update-openapi.mjs",
+    "generate": "npm run openapi:generate",
+    "build": "npm run openapi:generate && tsc -p tsconfig.json",
+    "test": "npm run build && node --test --test-concurrency=1 test/*.test.mjs",
+    "prepack": "npm run build"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/magicblock-labs/mirage.git"
+  },
+  "bugs": {
+    "url": "https://github.com/magicblock-labs/mirage/issues"
+  },
+  "homepage": "https://github.com/magicblock-labs/mirage#readme",
+  "keywords": [
+    "magicblock",
+    "solana",
+    "cli",
+    "payments",
+    "ows"
+  ],
+  "dependencies": {
+    "@open-wallet-standard/core": "^1.2.4",
+    "commander": "^14.0.3",
+    "openapi-fetch": "^0.17.0"
+  },
+  "devDependencies": {
+    "@types/node": "^25.5.2",
+    "openapi-typescript": "^7.13.0",
+    "typescript": "^5.9.3"
+  }
+}
