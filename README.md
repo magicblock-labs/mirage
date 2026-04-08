@@ -2,12 +2,13 @@
   <img src="./openapi/mirage.jpg" width="168" alt="Mirage logo" />
   <h1>@magicblock-labs/mirage</h1>
   <p>Commander-based CLI for MagicBlock private payments, wallet funding, and Solana transactions.</p>
-  <p>
-    <a href="https://github.com/magicblock-labs/mirage">Repository</a>
-    ·
-    <a href="https://www.npmjs.com/package/@magicblock-labs/mirage">npm package</a>
-  </p>
 </div>
+
+## Packages
+
+| Package                   | Description                                                          | Version                                                                                                                           | Docs                                                                                                                                                    |
+|:--------------------------|:---------------------------------------------------------------------|:----------------------------------------------------------------------------------------------------------------------------------|:--------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `@magicblock-labs/mirage` | Commander-based CLI for MagicBlock private payments and wallet flows | [![npm version](https://img.shields.io/npm/v/%40magicblock-labs%2Fmirage?color=blue)](https://www.npmjs.com/package/@magicblock-labs/mirage) | [![docs quickstart](https://img.shields.io/badge/docs-quickstart-blue)](https://docs.magicblock.gg/pages/private-ephemeral-rollups-pers/how-to-guide/quickstart) |
 
 ## Install
 
@@ -59,6 +60,14 @@ mirage transfer \
 
 mirage ows sign message --wallet agent-treasury --chain solana --message "hello"
 ```
+
+## Skills
+
+This repo includes a reusable Mirage transfer skill in [skills/mirage-private-transfer/SKILL.md](./skills/mirage-private-transfer/SKILL.md).
+
+- Codex: copy `skills/mirage-private-transfer/` into `$CODEX_HOME/skills/` or `~/.codex/skills/`, then invoke it with `$mirage-private-transfer`.
+- Claude Code: copy [.claude/commands/mirage-private-transfer.md](./.claude/commands/mirage-private-transfer.md) into your project’s `.claude/commands/` directory, then invoke `/mirage-private-transfer`.
+- The skill covers resolving wallet addresses, opening `mirage fund` to receive funds, sending private transfers with `mirage transfer`, and reporting the sender plus signature after broadcast.
 
 ## Development
 
