@@ -17,6 +17,7 @@
   "files": [
     "dist",
     "openapi",
+    "postinstall.mjs",
     "README.md"
   ],
   "engines": {
@@ -27,6 +28,7 @@
     "openapi:update": "node ./scripts/update-openapi.mjs",
     "generate": "npm run openapi:generate",
     "build": "npm run openapi:generate && tsc -p tsconfig.json",
+    "postinstall": "node ./postinstall.mjs",
     "test": "npm run build && node --test --test-concurrency=1 test/*.test.mjs",
     "prepack": "npm run build"
   },
