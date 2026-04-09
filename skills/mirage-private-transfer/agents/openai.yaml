@@ -1,7 +1,7 @@
 interface:
-  display_name: "Mirage Private Transfer"
-  short_description: "Receive funds and send Mirage private transfers"
-  default_prompt: "Use $mirage-private-transfer to receive funds with Mirage or send a private Mirage transfer safely."
+  display_name: "Mirage Solana Wallet"
+  short_description: "Create wallets, fund them, transfer tokens, and sign Solana transactions"
+  default_prompt: "Use $mirage-private-transfer to create Mirage wallets, fund them, send public or private transfers, or sign other Solana transactions safely."
 
 policy:
   allow_implicit_invocation: true

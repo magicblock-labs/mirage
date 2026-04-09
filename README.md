@@ -63,11 +63,11 @@ mirage ows sign message --wallet agent-treasury --chain solana --message "hello"
 
 ## Skills
 
-This repo includes a reusable Mirage transfer skill in [skills/mirage-private-transfer/SKILL.md](./skills/mirage-private-transfer/SKILL.md).
+This repo includes a reusable Mirage wallet skill in [skills/mirage-private-transfer/SKILL.md](./skills/mirage-private-transfer/SKILL.md).
 
-- Codex: copy `skills/mirage-private-transfer/` into `$CODEX_HOME/skills/` or `~/.codex/skills/`, then invoke it with `$mirage-private-transfer`.
-- Claude Code: copy [.claude/commands/mirage-private-transfer.md](./.claude/commands/mirage-private-transfer.md) into your project’s `.claude/commands/` directory, then invoke `/mirage-private-transfer`.
-- The skill covers resolving wallet addresses, opening `mirage fund` to receive funds, sending private transfers with `mirage transfer`, and reporting the sender plus signature after broadcast.
+- Install it from GitHub with `npx skills add magicblock-labs/mirage`.
+- To install this specific skill non-interactively, use `npx skills add magicblock-labs/mirage --skill mirage-private-transfer`.
+- The skill covers creating Solana wallets with `mirage ows wallet create`, funding wallets through `mirage fund`, sending public or private SPL transfers with `mirage transfer`, and signing arbitrary Solana transactions with `mirage ows sign tx`.
 
 ## Development
 
