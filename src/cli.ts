@@ -3,6 +3,7 @@
 import { createProgram } from "./program.js";
 import { MirageError, formatError } from "./lib/errors.js";
 import { runOwsCli } from "./lib/ows.js";
+import { printBanner } from "./lib/banner.js";
 
 async function main(): Promise<void> {
   const [, , ...args] = process.argv;
@@ -15,6 +16,7 @@ async function main(): Promise<void> {
   const program = createProgram();
 
   if (args.length === 0) {
+    printBanner();
     program.outputHelp();
     return;
   }
