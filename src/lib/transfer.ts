@@ -23,6 +23,7 @@ import {
 import { findSolanaAccount, runOwsCli } from "./ows.js";
 import { promptSecret } from "./prompt.js";
 import {
+  attachSignatureToTransaction,
   convertUiAmountToBaseUnits,
   fetchMintDecimals,
   resolveSolanaRpcUrl,
@@ -310,49 +311,6 @@ async function signTransferTransaction(
     options.rpcUrl,
     options.vaultPath,
   );
-}
-
-function attachSignatureToTransaction(
-  transactionBase64: string,
-  signatureHex: string,
-): string {
-  const transaction = Buffer.from(transactionBase64, "base64");
-  const signature = Buffer.from(signatureHex, "hex");
-  const [signatureCount, signaturePrefixLength] = readShortVec(transaction, 0);
-
-  if (signatureCount < 1) {
-    throw new MirageError("Unsigned Solana transaction did not reserve any signatures.");
-  }
-
-  if (signature.length !== 64) {
-    throw new MirageError("OWS returned an invalid Solana signature length.");
-  }
-
-  signature.copy(transaction, signaturePrefixLength);
-  return transaction.toString("base64");
-}
-
-function readShortVec(buffer: Buffer, offset: number): [number, number] {
-  let value = 0;
-  let length = 0;
-  let shift = 0;
-
-  while (true) {
-    const byte = buffer[offset + length];
-
-    if (byte === undefined) {
-      throw new MirageError("Unsigned Solana transaction ended before the signature prefix was complete.");
-    }
-
-    value |= (byte & 0x7f) << shift;
-    length += 1;
-
-    if ((byte & 0x80) === 0) {
-      return [value, length];
-    }
-
-    shift += 7;
-  }
 }
 
 function isBlockhashNotFoundError(error: unknown): boolean {
