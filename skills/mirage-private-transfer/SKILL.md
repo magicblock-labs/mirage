@@ -36,9 +36,9 @@ Use this skill whenever the task involves a Mirage wallet, a funding or transfer
    - Add `--visibility private` or `--visibility public` to match the user's request. The default is private.
    - Use `--cluster` or `--rpc-url` only when the user asks or the environment requires it.
 5. If the user wants to invoke an arbitrary Anchor program:
-   - Use `mirage invoke <program-id>` to fetch the on-chain IDL, pick one or more instructions interactively, auto-derive the signer, sysvars, and any IDL-declared PDAs, prompt for remaining args and accounts, then sign and send as a single atomic transaction.
-   - Add `--cluster devnet` (or `--rpc-url <url>`) for any non-mainnet run, and prefer devnet when exploring a new program.
-   - Add `--idl <path>` when the program has no on-chain IDL or when the user supplies a local IDL JSON file.
+   - Always attempt the program ID on its own first: run `mirage invoke <program-id>` (add `--cluster devnet` or `--rpc-url <url>` for non-mainnet). Most Anchor programs publish their IDL on-chain, so this is the expected default path.
+   - If Mirage errors with `No Anchor IDL is published on-chain for <program-id>. Provide one with --idl <path>.`, ask the user for a local IDL JSON file (e.g. from their repo at `target/idl/<name>.json` or the program's GitHub) and retry with `mirage invoke <program-id> --idl <path> ...`.
+   - During the flow, the CLI fetches the IDL, lets the user pick one or more instructions interactively, auto-derives the signer, well-known sysvars/programs, and any IDL-declared PDAs, and only prompts for args or accounts it cannot resolve. The user then confirms a final transaction summary before it is signed and broadcast.
    - Add `--wallet <name>` when the fee payer is not `agent-treasury`.
    - Add `--yes` only when the user has already confirmed the full transaction plan; otherwise let the CLI show the final summary and prompt for confirmation.
    - Report the transaction signature and a cluster-appropriate explorer URL after the send.
@@ -67,8 +67,8 @@ mirage transfer --wallet sender-wallet --to <recipient> --mint <mint> --amount 1
 
 mirage ows sign tx --wallet agent-treasury --chain solana --tx <unsigned-tx-hex>
 
-mirage invoke <program-id> --cluster devnet
-mirage invoke <program-id> --idl ./path/to/idl.json --cluster devnet
+mirage invoke <program-id> --cluster devnet                      # default: try on-chain IDL
+mirage invoke <program-id> --idl ./target/idl/<name>.json        # fallback when no on-chain IDL
 mirage invoke <program-id> --wallet sender-wallet --rpc-url https://api.mainnet-beta.solana.com
 ```
 
@@ -79,6 +79,6 @@ mirage invoke <program-id> --wallet sender-wallet --rpc-url https://api.mainnet-
 - If the user only supplies a recipient wallet name, resolve it with `mirage address` before sending.
 - If the user needs a brand-new named wallet, create it explicitly with `mirage ows wallet create --name <wallet>` before using it in other commands.
 - Use `mirage ows sign tx` for arbitrary Solana transactions that are outside Mirage's higher-level transfer flow.
-- `mirage invoke` requires the program's Anchor IDL. If neither the on-chain IDL nor a `--idl` file is available, the command errors out; surface a local IDL path or ask the user to supply one.
+- `mirage invoke` defaults to the on-chain Anchor IDL PDA. Try the bare `mirage invoke <program-id>` form first; only ask the user for a local IDL when Mirage reports that no on-chain IDL is published.
 - `mirage invoke` auto-derives signers, well-known sysvars/programs, and PDAs whose seeds are declared in the IDL. Any remaining account is prompted for, so the flow works even with partially-declared IDL metadata.
 - On older Mirage installs, `BlockhashNotFound` on private transfers can indicate an outdated global CLI. Re-run with the current build if needed.
