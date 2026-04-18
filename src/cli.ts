@@ -1,5 +1,7 @@
 #!/usr/bin/env node
 
+import "./lib/suppress-warnings.js";
+
 import { createProgram } from "./program.js";
 import { MirageError, formatError } from "./lib/errors.js";
 import { runOwsCli } from "./lib/ows.js";

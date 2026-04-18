@@ -1,6 +1,6 @@
 {
   "name": "@magicblock-labs/mirage",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "CLI for MagicBlock private payments, wallet funding, and Open Wallet Standard workflows.",
   "type": "module",
   "bin": {
@@ -51,7 +51,9 @@
     "ows"
   ],
   "dependencies": {
+    "@coral-xyz/anchor": "^0.32.1",
     "@open-wallet-standard/core": "^1.2.4",
+    "@solana/web3.js": "^1.98.4",
     "commander": "^14.0.3",
     "openapi-fetch": "^0.17.0"
   },

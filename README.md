@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="./openapi/mirage.jpg" width="168" alt="Mirage logo" />
+  <img src="./assets/banner.png" alt="Mirage" />
   <h1>@magicblock-labs/mirage</h1>
   <p>Commander-based CLI for MagicBlock private payments, wallet funding, and Solana transactions.</p>
 </div>

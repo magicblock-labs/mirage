@@ -6,6 +6,7 @@ import { registerAddressCommand } from "./commands/address.js";
 import { registerBalanceCommand } from "./commands/balance.js";
 import { registerConfigCommand } from "./commands/config.js";
 import { registerFundCommand } from "./commands/fund.js";
+import { registerInvokeCommand } from "./commands/invoke.js";
 import { registerOwsCommand } from "./commands/ows.js";
 import { registerTransferCommand } from "./commands/transfer.js";
 
@@ -23,6 +24,7 @@ export function createProgram(): Command {
   registerAddressCommand(program);
   registerFundCommand(program);
   registerTransferCommand(program);
+  registerInvokeCommand(program);
   registerApiCommand(program);
   registerConfigCommand(program);
   registerOwsCommand(program);
@@ -36,6 +38,7 @@ export function createProgram(): Command {
       "  mirage address --wallet agent-treasury-1",
       "  mirage fund --wallet agent-treasury-1",
       "  mirage transfer --wallet agent-treasury --to Bt9oNR5cCtnfuMmXgWELd6q5i974PdEMQDUE55nBC57L --mint EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v --amount 1000000",
+      "  mirage invoke 9xQeWvG816bUx9EPjHmaT23yvVM2ZWbrrpZb9PusVFin --cluster devnet",
       "  mirage config set-rpc https://api.mainnet-beta.solana.com",
       '  mirage ows sign message --wallet agent-treasury --chain solana --message "hello"',
     ].join("\n"),
