@@ -9,6 +9,7 @@ import {
   coerceArgument,
   derivePdaFromMetadata,
   executeInvoke,
+  inspectIdl,
 } from "../dist/lib/invoke.js";
 
 const { BN } = anchor;
@@ -177,6 +178,147 @@ test("executeInvoke walks the IDL, builds the tx, and routes signing through OWS
   assert.equal(result.programId, PROGRAM_ID);
   assert.equal(result.from, SIGNER_ADDRESS);
   assert.equal(result.instructions.length, 1);
+  assert.equal(result.instructions[0].name, "initialize");
+  assert.equal(result.recentBlockhash, "EkSnNWid2cvwEVnVx9aBqawnmiCNiDgp3gUdkDPTKN1N");
+});
+
+test("inspectIdl returns a catalog with account resolution hints", async () => {
+  const catalog = await inspectIdl(
+    { programId: PROGRAM_ID, rpcUrl: "https://rpc.example.com" },
+    {
+      loadIdl: async () => ({ idl: COUNTER_IDL, source: { kind: "on-chain", location: PROGRAM_ID } }),
+    },
+  );
+
+  assert.equal(catalog.programId, PROGRAM_ID);
+  assert.equal(catalog.name, "counter");
+  assert.equal(catalog.instructions.length, 1);
+
+  const [initialize] = catalog.instructions;
+  assert.equal(initialize.name, "initialize");
+  assert.deepEqual(initialize.args, [{ name: "start", type: "u64" }]);
+
+  const accounts = Object.fromEntries(initialize.accounts.map((a) => [a.name, a]));
+  assert.equal(accounts.authority.autoResolvable, true);
+  assert.equal(accounts.authority.resolvedBy, "signer");
+  assert.equal(accounts.systemProgram.autoResolvable, true);
+  assert.equal(accounts.systemProgram.resolvedBy, "idl-address");
+  // `counter` uses a PDA with an `account` seed which we don't resolve upfront in the catalog,
+  // so it should fall through to non-auto-resolvable (prompt required).
+  assert.equal(accounts.counter.autoResolvable, false);
+});
+
+test("executeInvoke honours --ix selection and argument overrides", async () => {
+  const calls = { signCount: 0 };
+
+  const result = await executeInvoke(
+    {
+      argOverrides: { initialize: { start: "42" } },
+      programId: PROGRAM_ID,
+      rpcUrl: "https://rpc.example.com",
+      selection: ["initialize"],
+      wallet: "agent-treasury",
+      yes: true,
+    },
+    {
+      fetchLatestBlockhash: async () => "EkSnNWid2cvwEVnVx9aBqawnmiCNiDgp3gUdkDPTKN1N",
+      getWallet: () => ({
+        accounts: [
+          { address: SIGNER_ADDRESS, chainId: "solana:mainnet", derivationPath: "m/44'/501'/0'/0'" },
+        ],
+        createdAt: "2026-04-07T00:00:00.000Z",
+        id: "wallet-id",
+        name: "agent-treasury",
+      }),
+      listWallets: () => [{ id: "wallet-id", name: "agent-treasury" }],
+      loadIdl: async () => ({
+        idl: COUNTER_IDL,
+        source: { kind: "on-chain", location: PROGRAM_ID },
+      }),
+      pickInstructions: async () => {
+        throw new Error("should not prompt when --ix is provided");
+      },
+      promptConfirm: async () => true,
+      promptLine: async () => undefined,
+      promptSecret: async () => undefined,
+      // The default resolvers walk the IDL and consume overrides; mirror that here.
+      resolveArgs: async (ix, _idl, overrides) => {
+        const override = overrides?.start;
+        if (override === undefined) {
+          throw new Error("expected start override");
+        }
+        return { start: new BN(override) };
+      },
+      resolveAccounts: async (_ix, _idl, context) => ({
+        authority: context.signer,
+        counter: new PublicKey("Counter111111111111111111111111111111111111"),
+        systemProgram: new PublicKey("11111111111111111111111111111111"),
+      }),
+      runOwsCli: async () => 0,
+      sendRawTransaction: async () => ({ txHash: "sent-sig" }),
+      signAndSend: () => ({ txHash: "unused" }),
+      signTransaction: () => {
+        calls.signCount += 1;
+        return { signature: Buffer.alloc(64, 3).toString("hex") };
+      },
+    },
+  );
+
+  assert.equal(calls.signCount, 1);
+  assert.equal(result.txHash, "sent-sig");
+  assert.equal(result.instructions[0].name, "initialize");
+});
+
+test("executeInvoke dry-run returns a plan without signing", async () => {
+  const result = await executeInvoke(
+    {
+      dryRun: true,
+      programId: PROGRAM_ID,
+      rpcUrl: "https://rpc.example.com",
+      selection: ["initialize"],
+      wallet: "agent-treasury",
+      yes: true,
+    },
+    {
+      fetchLatestBlockhash: async () => "EkSnNWid2cvwEVnVx9aBqawnmiCNiDgp3gUdkDPTKN1N",
+      getWallet: () => ({
+        accounts: [
+          { address: SIGNER_ADDRESS, chainId: "solana:mainnet", derivationPath: "m/44'/501'/0'/0'" },
+        ],
+        createdAt: "2026-04-07T00:00:00.000Z",
+        id: "wallet-id",
+        name: "agent-treasury",
+      }),
+      listWallets: () => [{ id: "wallet-id", name: "agent-treasury" }],
+      loadIdl: async () => ({
+        idl: COUNTER_IDL,
+        source: { kind: "on-chain", location: PROGRAM_ID },
+      }),
+      pickInstructions: async () => [],
+      promptConfirm: async () => false,
+      promptLine: async () => undefined,
+      promptSecret: async () => undefined,
+      resolveArgs: async () => ({ start: new BN(1) }),
+      resolveAccounts: async (_ix, _idl, context) => ({
+        authority: context.signer,
+        counter: new PublicKey("Counter111111111111111111111111111111111111"),
+        systemProgram: new PublicKey("11111111111111111111111111111111"),
+      }),
+      runOwsCli: async () => 0,
+      sendRawTransaction: async () => {
+        throw new Error("dry-run must not broadcast");
+      },
+      signAndSend: () => {
+        throw new Error("dry-run must not sign");
+      },
+      signTransaction: () => {
+        throw new Error("dry-run must not sign");
+      },
+    },
+  );
+
+  assert.equal(result.dryRun, true);
+  assert.equal(result.txHash, undefined);
   assert.equal(result.instructions[0].name, "initialize");
   assert.equal(result.recentBlockhash, "EkSnNWid2cvwEVnVx9aBqawnmiCNiDgp3gUdkDPTKN1N");
 });

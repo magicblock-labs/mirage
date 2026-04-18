@@ -38,7 +38,10 @@ Use this skill whenever the task involves a Mirage wallet, a funding or transfer
 5. If the user wants to invoke an arbitrary Anchor program:
    - Always attempt the program ID on its own first: run `mirage invoke <program-id>` (add `--cluster devnet` or `--rpc-url <url>` for non-mainnet). Most Anchor programs publish their IDL on-chain, so this is the expected default path.
    - If Mirage errors with `No Anchor IDL is published on-chain for <program-id>. Provide one with --idl <path>.`, ask the user for a local IDL JSON file (e.g. from their repo at `target/idl/<name>.json` or the program's GitHub) and retry with `mirage invoke <program-id> --idl <path> ...`.
-   - During the flow, the CLI fetches the IDL, lets the user pick one or more instructions interactively, auto-derives the signer, well-known sysvars/programs, and any IDL-declared PDAs, and only prompts for args or accounts it cannot resolve. The user then confirms a final transaction summary before it is signed and broadcast.
+   - When running from a non-interactive environment (shell scripts, an agent harness like Claude Code, CI), drive the command entirely through flags instead of the interactive prompts:
+     1. First, inspect the program with `mirage invoke <program-id> --cluster <cluster> --show-idl` (add `--idl <path>` if the on-chain IDL is unavailable). It emits a JSON catalog listing every instruction, its args with types, and whether each account is auto-resolvable (signer, IDL address, well-known sysvar/program, or PDA with fully declared seeds). Use this to decide which instruction(s) to run and which accounts/args you still need from the user.
+     2. Then run `mirage invoke <program-id> --cluster <cluster> --ix <name> [--ix <name> ...] --arg <ix>.<name>=<value> ... --account <ix>.<name>=<pubkey> ... --yes` to build, sign, and send without any prompts. Repeat `--ix`, `--arg`, and `--account` as many times as needed. Use `--dry-run` to preview the resolved transaction plan without signing when you want to confirm with the user first.
+   - During interactive use, the CLI fetches the IDL, lets the user pick one or more instructions, auto-derives the signer, well-known sysvars/programs, and any IDL-declared PDAs, and only prompts for args or accounts it cannot resolve. The user then confirms a final transaction summary before it is signed and broadcast.
    - Add `--wallet <name>` when the fee payer is not `agent-treasury`.
    - Add `--yes` only when the user has already confirmed the full transaction plan; otherwise let the CLI show the final summary and prompt for confirmation.
    - Report the transaction signature and a cluster-appropriate explorer URL after the send.
@@ -67,9 +70,17 @@ mirage transfer --wallet sender-wallet --to <recipient> --mint <mint> --amount 1
 
 mirage ows sign tx --wallet agent-treasury --chain solana --tx <unsigned-tx-hex>
 
-mirage invoke <program-id> --cluster devnet                      # default: try on-chain IDL
+mirage invoke <program-id> --cluster devnet                      # interactive: tries on-chain IDL
 mirage invoke <program-id> --idl ./target/idl/<name>.json        # fallback when no on-chain IDL
-mirage invoke <program-id> --wallet sender-wallet --rpc-url https://api.mainnet-beta.solana.com
+
+# non-interactive (agents / scripts / CI):
+mirage invoke <program-id> --cluster devnet --show-idl           # emit IDL catalog as JSON, then exit
+mirage invoke <program-id> --cluster devnet \
+  --ix increment \
+  --arg increment.amount=1 \
+  --account increment.counter=<pubkey> \
+  --dry-run                                                      # preview the resolved plan, no signing
+mirage invoke <program-id> --cluster devnet --ix increment --yes # run with auto-resolution for everything
 ```
 
 ## Notes

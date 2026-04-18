@@ -81,6 +81,10 @@ export interface InvokeOptions {
   passphrase?: string;
   vaultPath?: string;
   yes?: boolean;
+  selection?: string[];
+  argOverrides?: Record<string, Record<string, string>>;
+  accountOverrides?: Record<string, Record<string, string>>;
+  dryRun?: boolean;
 }
 
 export interface InvokeResultInstruction {
@@ -91,13 +95,36 @@ export interface InvokeResultInstruction {
 }
 
 export interface InvokeResult {
+  dryRun?: boolean;
   from: string;
   programId: string;
   source: IdlSource;
   instructions: InvokeResultInstruction[];
   recentBlockhash: string;
   rpcUrl?: string;
-  txHash: string;
+  txHash?: string;
+}
+
+export interface IdlCatalogInstruction {
+  name: string;
+  args: { name: string; type: string }[];
+  accounts: {
+    name: string;
+    writable: boolean;
+    signer: boolean;
+    optional: boolean;
+    autoResolvable: boolean;
+    resolvedBy?: "signer" | "idl-address" | "well-known" | "pda";
+    wellKnownLabel?: string;
+  }[];
+}
+
+export interface IdlCatalog {
+  programId: string;
+  source: IdlSource;
+  name: string;
+  version: string;
+  instructions: IdlCatalogInstruction[];
 }
 
 export interface InvokeRuntime extends DefaultWalletRuntime {
@@ -107,11 +134,16 @@ export interface InvokeRuntime extends DefaultWalletRuntime {
   promptLine: typeof promptLine;
   promptSecret: typeof promptSecret;
   pickInstructions: (idl: Idl) => Promise<IdlInstruction[]>;
-  resolveArgs: (ix: IdlInstruction, idl: Idl) => Promise<Record<string, unknown>>;
+  resolveArgs: (
+    ix: IdlInstruction,
+    idl: Idl,
+    overrides?: Record<string, string>,
+  ) => Promise<Record<string, unknown>>;
   resolveAccounts: (
     ix: IdlInstruction,
     idl: Idl,
     context: AccountResolutionContext,
+    overrides?: Record<string, string>,
   ) => Promise<Record<string, PublicKey>>;
   fetchLatestBlockhash: (rpcUrl: string) => Promise<string>;
   sendRawTransaction: (transactionBase64: string, rpcUrl: string) => Promise<SendResult>;
@@ -150,8 +182,9 @@ const defaultRuntime: InvokeRuntime = {
   promptConfirm,
   promptLine,
   promptSecret,
-  resolveAccounts: (ix, idl, context) => resolveAccountsInteractive(ix, idl, context),
-  resolveArgs: (ix, idl) => resolveArgsInteractive(ix, idl),
+  resolveAccounts: (ix, idl, context, overrides) =>
+    resolveAccountsInteractive(ix, idl, context, overrides),
+  resolveArgs: (ix, idl, overrides) => resolveArgsInteractive(ix, idl, overrides),
   runOwsCli,
   sendRawTransaction: (transactionBase64, rpcUrl) =>
     sendRawSolanaTransaction(transactionBase64, rpcUrl),
@@ -188,7 +221,9 @@ export async function executeInvoke(
   console.error(`IDL:     ${describeSource(source)}`);
   console.error(`Signer:  ${signerAddress} (${walletName})\n`);
 
-  const selected = await runtime.pickInstructions(normalizedIdl);
+  const selected = options.selection
+    ? resolveSelectionByName(options.selection, normalizedIdl)
+    : await runtime.pickInstructions(normalizedIdl);
 
   if (selected.length === 0) {
     throw new MirageError("No instructions selected; nothing to do.");
@@ -202,13 +237,20 @@ export async function executeInvoke(
   for (const ix of selected) {
     console.error(`\n── ${ix.name} ──`);
 
-    const args = await runtime.resolveArgs(ix, normalizedIdl);
-    const accounts = await runtime.resolveAccounts(ix, normalizedIdl, {
-      args,
-      programId,
-      resolvedAccounts,
-      signer,
-    });
+    const argOverrides = options.argOverrides?.[ix.name];
+    const accountOverrides = options.accountOverrides?.[ix.name];
+    const args = await runtime.resolveArgs(ix, normalizedIdl, argOverrides);
+    const accounts = await runtime.resolveAccounts(
+      ix,
+      normalizedIdl,
+      {
+        args,
+        programId,
+        resolvedAccounts,
+        signer,
+      },
+      accountOverrides,
+    );
 
     for (const [name, pubkey] of Object.entries(accounts)) {
       resolvedAccounts[name] = pubkey;
@@ -233,6 +275,18 @@ export async function executeInvoke(
     rpcUrl,
     sizeBytes: unsignedTx.length,
   });
+
+  if (options.dryRun) {
+    return {
+      dryRun: true,
+      from: signerAddress,
+      instructions: summaries,
+      programId: programId.toBase58(),
+      recentBlockhash,
+      rpcUrl,
+      source,
+    };
+  }
 
   if (!options.yes) {
     const confirmed = await runtime.promptConfirm("Sign and send?", false);
@@ -410,6 +464,99 @@ async function resolvePassphrase(
   return prompted || undefined;
 }
 
+function resolveSelectionByName(
+  names: string[],
+  idl: Idl,
+): IdlInstruction[] {
+  return names.map((name) => {
+    const ix = idl.instructions.find((candidate) => candidate.name === name);
+
+    if (!ix) {
+      const available = idl.instructions.map((candidate) => candidate.name).join(", ");
+      throw new MirageError(
+        `Unknown instruction "${name}". Available: ${available || "(none)"}.`,
+      );
+    }
+
+    return ix;
+  });
+}
+
+export interface InspectIdlOptions {
+  programId: string;
+  idlPath?: string;
+  cluster?: string;
+  rpcUrl?: string;
+}
+
+export interface InspectIdlRuntime {
+  loadIdl: typeof loadIdl;
+}
+
+const defaultInspectRuntime: InspectIdlRuntime = { loadIdl };
+
+export async function inspectIdl(
+  options: InspectIdlOptions,
+  runtime: InspectIdlRuntime = defaultInspectRuntime,
+): Promise<IdlCatalog> {
+  const rpcUrl = resolveSolanaRpcUrl(options.cluster, options.rpcUrl);
+  const { idl, source } = await runtime.loadIdl({
+    idlPath: options.idlPath,
+    programId: options.programId,
+    rpcUrl,
+  });
+  const normalizedIdl = convertIdlToCamelCase(idl);
+
+  return {
+    instructions: normalizedIdl.instructions.map(buildCatalogInstruction),
+    name: normalizedIdl.metadata?.name ?? "<unnamed>",
+    programId: options.programId,
+    source,
+    version: normalizedIdl.metadata?.version ?? "?",
+  };
+}
+
+function buildCatalogInstruction(ix: IdlInstruction): IdlCatalogInstruction {
+  const flatAccounts = flattenAccounts(ix.accounts);
+
+  return {
+    accounts: flatAccounts.map((account) => {
+      const resolution = classifyAccountResolution(account);
+      return {
+        autoResolvable: resolution !== undefined,
+        name: account.name,
+        optional: Boolean(account.optional),
+        resolvedBy: resolution?.kind,
+        signer: Boolean(account.signer),
+        wellKnownLabel: resolution?.label,
+        writable: Boolean(account.writable),
+      };
+    }),
+    args: ix.args.map((arg) => ({
+      name: arg.name,
+      type: describeIdlType(arg.type),
+    })),
+    name: ix.name,
+  };
+}
+
+function classifyAccountResolution(
+  account: IdlInstructionAccount,
+): { kind: "signer" | "idl-address" | "well-known" | "pda"; label?: string } | undefined {
+  if (account.signer) return { kind: "signer" };
+  if (account.address) return { kind: "idl-address" };
+
+  const known = WELL_KNOWN_ADDRESSES[account.name];
+
+  if (known) return { kind: "well-known", label: known.label };
+
+  if (account.pda && account.pda.seeds.every((seed) => seed.kind === "const" || seed.kind === "arg")) {
+    return { kind: "pda" };
+  }
+
+  return undefined;
+}
+
 async function pickInstructionsInteractive(idl: Idl): Promise<IdlInstruction[]> {
   if (idl.instructions.length === 0) {
     throw new MirageError("IDL contains no instructions.");
@@ -492,11 +639,20 @@ async function pickInstructionsFallback(idl: Idl): Promise<IdlInstruction[]> {
 async function resolveArgsInteractive(
   ix: IdlInstruction,
   idl: Idl,
+  overrides?: Record<string, string>,
 ): Promise<Record<string, unknown>> {
   const args: Record<string, unknown> = {};
 
   for (const field of ix.args) {
-    args[field.name] = await resolveArg(field, idl, `${ix.name}.${field.name}`);
+    const label = `${ix.name}.${field.name}`;
+    const override = overrides?.[field.name];
+
+    if (override !== undefined) {
+      args[field.name] = coerceArgument(field.type, override, label, idl);
+      continue;
+    }
+
+    args[field.name] = await resolveArg(field, idl, label);
   }
 
   return args;
@@ -512,7 +668,7 @@ async function resolveArg(
 
   if (answer === undefined) {
     throw new MirageError(
-      `Cannot prompt for argument "${label}" without an interactive terminal.`,
+      `Argument "${label}" needs a value. Supply --arg ${label}=<value> or run in an interactive terminal.`,
     );
   }
 
@@ -678,20 +834,35 @@ async function resolveAccountsInteractive(
   ix: IdlInstruction,
   idl: Idl,
   context: AccountResolutionContext,
+  overrides?: Record<string, string>,
 ): Promise<Record<string, PublicKey>> {
+  void idl;
   const resolved: Record<string, PublicKey> = {};
   const flatAccounts = flattenAccounts(ix.accounts);
 
   for (const account of flatAccounts) {
     const { name } = account;
-    const pubkey = await resolveAccount(account, context, resolved);
+    const override = overrides?.[name];
+    const pubkey = override
+      ? parseOverridePubkey(override, `${ix.name}.${name}`)
+      : await resolveAccount(account, context, resolved);
     resolved[name] = pubkey;
 
-    const source = pickAccountSource(account, context, pubkey);
+    const source = override
+      ? "(user-override)"
+      : pickAccountSource(account, context, pubkey);
     console.error(`  ${formatAccountName(account)}: ${pubkey.toBase58()} ${source}`);
   }
 
   return resolved;
+}
+
+function parseOverridePubkey(raw: string, label: string): PublicKey {
+  try {
+    return new PublicKey(raw);
+  } catch {
+    throw new MirageError(`Override for account "${label}" is not a valid Solana address: ${raw}`);
+  }
 }
 
 function flattenAccounts(
@@ -862,7 +1033,7 @@ async function promptForAccount(account: IdlInstructionAccount): Promise<PublicK
 
   if (answer === undefined) {
     throw new MirageError(
-      `Cannot prompt for account "${account.name}" without an interactive terminal.`,
+      `Account "${account.name}" needs a value. Supply --account <ix>.${account.name}=<pubkey> or run in an interactive terminal.`,
     );
   }
 
