@@ -33,6 +33,7 @@ Mirage also uses the shared OWS config at `~/.ows/config.json` for its default S
 - `mirage transfer` accepts UI amounts like `0.1`, defaults `--mint` to mainnet USDC, resolves mint decimals over Solana RPC, builds a transaction from the MagicBlock payments API, signs it with OWS, and sends it on Solana
 - `mirage ows ...` forwards directly to the bundled `ows` CLI
 - `mirage api ...` exposes low-level commands generated from the checked-in OpenAPI schema
+- `mirage invoke ...` allow to create arbitrary transaction using a program IDL (onchain or manually provided)
 
 `mirage address`, `mirage balance`, `mirage fund`, and `mirage transfer` default to the `agent-treasury` wallet. If `agent-treasury` does not exist yet, Mirage creates it automatically before running the command. Passing `--wallet <name>` uses that existing OWS wallet instead.
 
@@ -59,6 +60,8 @@ mirage transfer \
   --amount 0.1
 
 mirage ows sign message --wallet agent-treasury --chain solana --message "hello"
+
+mirage invoke 852a53jomx7dGmkpbFPGXNJymRxywo3WsH1vusNASJRr --cluster devnet
 ```
 
 ## Skills
