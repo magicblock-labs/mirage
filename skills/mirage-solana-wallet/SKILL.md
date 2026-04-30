@@ -1,26 +1,27 @@
 ---
 name: mirage-solana-wallet
-description: Use when the user wants to operate a Solana wallet from an agent — creating or resolving named wallets, funding them, reading balances, invoking ANY Anchor program by its IDL (on-chain or local), sending public or private SPL transfers, signing arbitrary transactions or messages — through `mirage` and `mirage ows`, with safe confirmation and post-send verification.
+description: Use when the user wants to operate a Solana wallet from an agent — creating or resolving named wallets, funding them, reading balances, quoting or executing swaps, invoking ANY Anchor program by its IDL (on-chain or local), sending public or private SPL transfers, signing arbitrary transactions or messages — through `mirage` and `mirage ows`, with safe confirmation and post-send verification.
 ---
 
 # Mirage Solana Agent Wallet
 
-Use this skill whenever the task is a Solana wallet operation the agent should execute on the user's behalf: wallet creation, address resolution, balance checks, funding, arbitrary Anchor program calls, SPL transfers (public or private), or raw transaction/message signing. Everything runs through `mirage` and the bundled `mirage ows` CLI using an OWS-backed wallet (default: `agent-treasury`).
+Use this skill whenever the task is a Solana wallet operation the agent should execute on the user's behalf: wallet creation, address resolution, balance checks, funding, arbitrary Anchor program calls, swaps, SPL transfers (public or private), or raw transaction/message signing. Everything runs through `mirage` and the bundled `mirage ows` CLI using an OWS-backed wallet (default: `agent-treasury`).
 
 ## Safety
 
 - Treat every wallet, funding, transfer, program-invocation, and signing flow as a sensitive action.
 - Before opening a funding link, broadcasting a transfer, invoking a program instruction, or signing a raw transaction, restate the exact wallet, network (cluster/rpc), program/recipient, mint, amount, instruction(s), and any user-provided args or accounts in one short confirmation.
+- If the user asks for a swap quote or price, do not run `mirage swap` yet. First call the quote endpoint, present the expected input/output and price impact, then ask for explicit confirmation before broadcasting a swap.
 - Prefer devnet for first-time runs against an unfamiliar program.
 - Prefer `OWS_PASSPHRASE` over passing `--passphrase` on the command line.
-- Do not convert UI amounts to base units for `mirage transfer`; the CLI already accepts UI amounts like `0.1`.
+- Do not convert UI amounts to base units for `mirage transfer` or `mirage swap`; those CLI commands already accept UI amounts like `0.1`. Convert UI amounts only when directly calling the quote API.
 
 ## Workflow
 
 1. Create or resolve the wallet to operate.
    - Create a named wallet with `mirage ows wallet create --name <wallet>`.
    - List wallets with `mirage ows wallet list`.
-   - `mirage address`, `mirage balance`, `mirage fund`, `mirage transfer`, and `mirage invoke` auto-create the default `agent-treasury` wallet if it is missing.
+   - `mirage address`, `mirage balance`, `mirage fund`, `mirage transfer`, `mirage swap`, and `mirage invoke` auto-create the default `agent-treasury` wallet if it is missing.
    - Resolve a wallet's Solana address with `mirage address --wallet <name>`; check balance with `mirage balance --wallet <name>`.
 2. If the user wants to receive or top up, use `mirage fund` (add `--wallet <name>` when it is not `agent-treasury`). This opens the Mirage hosted funding flow with the wallet address as `rcv`.
 3. If the user wants to invoke an arbitrary Anchor program (build + sign + send any instruction):
@@ -37,10 +38,16 @@ Use this skill whenever the task is a Solana wallet operation the agent should e
    - Add `--mint <mint>` for a non-default mint.
    - Add `--visibility public` to opt out of private routing; `--visibility private` is the default.
    - Use `--cluster` or `--rpc-url` only when the user asks or the environment requires it.
-5. If the user wants to sign an arbitrary Solana transaction or message (outside the transfer/invoke flows):
+5. If the user wants a swap:
+   - For quote-only requests, call `GET https://payments.magicblock.app/v1/swap/quote` directly instead of running `mirage swap`.
+   - Convert the requested UI amount to base units for the input mint for `ExactIn` quotes, or output mint for `ExactOut` quotes. Use known decimals when certain (USDC and USDT are 6 decimals); otherwise fetch mint decimals over Solana RPC before calling the quote endpoint.
+   - Example USDC to USDT quote: `curl -s "https://payments.magicblock.app/v1/swap/quote?inputMint=EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v&outputMint=Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB&amount=500000&swapMode=ExactIn"`.
+   - Present `inAmount`, `outAmount`, `otherAmountThreshold`, `slippageBps`, `priceImpactPct`, and the route labels if available. Then ask whether to execute the swap.
+   - Execute only after confirmation with `mirage swap --input-mint <mint> --output-mint <mint> --amount <ui-amount>` plus any confirmed flags such as `--slippage-bps`, `--wallet`, `--visibility`, or private delivery fields.
+6. If the user wants to sign an arbitrary Solana transaction or message (outside the transfer/invoke/swap flows):
    - `mirage ows sign tx --wallet <name> --chain solana --tx <unsigned-tx-hex>` for raw transactions.
    - `mirage ows sign message --wallet <name> --chain solana --message "<message>"` for message-signing only (not for transactions).
-6. Report the outcome:
+7. Report the outcome:
    - Include the transaction signature and sender address.
    - For `mirage invoke`, include the cluster-appropriate explorer URL printed by the CLI.
    - Verify status on Solana RPC or check `mirage balance` when it is useful.
@@ -77,6 +84,10 @@ mirage transfer --wallet sender-wallet --to <recipient> --amount 2.5
 mirage transfer --wallet sender-wallet --to <recipient> --amount 2.5 --visibility public
 mirage transfer --wallet sender-wallet --to <recipient> --mint <mint> --amount 1
 
+# Swaps
+curl -s "https://payments.magicblock.app/v1/swap/quote?inputMint=<mint>&outputMint=<mint>&amount=<base-units>&swapMode=ExactIn"
+mirage swap --input-mint <mint> --output-mint <mint> --amount 0.5 --slippage-bps 50
+
 # Arbitrary signing
 mirage ows sign tx --wallet agent-treasury --chain solana --tx <unsigned-tx-hex>
 mirage ows sign message --wallet agent-treasury --chain solana --message "hello"
@@ -86,6 +97,7 @@ mirage ows sign message --wallet agent-treasury --chain solana --message "hello"
 
 - `mirage fund` is a receive/top-up flow, not a send flow.
 - `mirage transfer` defaults to mainnet USDC and private visibility; set `--visibility public` to opt out of private routing.
+- `mirage swap` signs and sends; use the quote endpoint directly for quote-only requests before asking the user to confirm execution.
 - If the user only supplies a recipient wallet name, resolve it with `mirage address` before sending.
 - Create a brand-new named wallet explicitly with `mirage ows wallet create --name <wallet>` before using it in other commands.
 - `mirage invoke` defaults to the on-chain Anchor IDL PDA. Try the bare `mirage invoke <program-id>` form first; only ask the user for a local IDL when Mirage reports that no on-chain IDL is published.

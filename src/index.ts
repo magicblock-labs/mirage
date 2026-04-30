@@ -32,4 +32,11 @@ export {
   executeTransfer,
   resolveTransferNetwork,
 } from "./lib/transfer.js";
+export {
+  buildSwapQuoteRequest,
+  buildSwapRequest,
+  DEFAULT_SWAP_WALLET,
+  executeSwap,
+  resolveSwapNetwork,
+} from "./lib/swap.js";
 export { createPaymentsClient } from "./lib/payments.js";

@@ -8,11 +8,13 @@ test("program registers generated api commands", () => {
   const addressCommand = program.commands.find((command) => command.name() === "address");
   const balanceCommand = program.commands.find((command) => command.name() === "balance");
   const fundCommand = program.commands.find((command) => command.name() === "fund");
+  const swapCommand = program.commands.find((command) => command.name() === "swap");
   const apiCommand = program.commands.find((command) => command.name() === "api");
 
   assert.ok(addressCommand, "expected an `address` command to be registered");
   assert.ok(balanceCommand, "expected a `balance` command to be registered");
   assert.ok(fundCommand, "expected a `fund` command to be registered");
+  assert.ok(swapCommand, "expected a `swap` command to be registered");
   assert.ok(apiCommand, "expected an `api` command to be registered");
 
   const generatedSubcommands = apiCommand.commands.map((command) => command.name());
@@ -20,4 +22,6 @@ test("program registers generated api commands", () => {
   assert.ok(generatedSubcommands.includes("transfer"));
   assert.ok(generatedSubcommands.includes("deposit"));
   assert.ok(generatedSubcommands.includes("withdraw"));
+  assert.ok(generatedSubcommands.includes("quote"));
+  assert.ok(generatedSubcommands.includes("swap"));
 });

@@ -8,6 +8,7 @@ import { registerConfigCommand } from "./commands/config.js";
 import { registerFundCommand } from "./commands/fund.js";
 import { registerInvokeCommand } from "./commands/invoke.js";
 import { registerOwsCommand } from "./commands/ows.js";
+import { registerSwapCommand } from "./commands/swap.js";
 import { registerTransferCommand } from "./commands/transfer.js";
 
 export function createProgram(): Command {
@@ -24,6 +25,7 @@ export function createProgram(): Command {
   registerAddressCommand(program);
   registerFundCommand(program);
   registerTransferCommand(program);
+  registerSwapCommand(program);
   registerInvokeCommand(program);
   registerApiCommand(program);
   registerConfigCommand(program);
@@ -38,6 +40,7 @@ export function createProgram(): Command {
       "  mirage address --wallet agent-treasury-1",
       "  mirage fund --wallet agent-treasury-1",
       "  mirage transfer --wallet agent-treasury --to Bt9oNR5cCtnfuMmXgWELd6q5i974PdEMQDUE55nBC57L --mint EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v --amount 1000000",
+      "  mirage swap --input-mint EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v --output-mint Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB --amount 1",
       "  mirage invoke 9xQeWvG816bUx9EPjHmaT23yvVM2ZWbrrpZb9PusVFin --cluster devnet",
       "  mirage config set-rpc https://api.mainnet-beta.solana.com",
       '  mirage ows sign message --wallet agent-treasury --chain solana --message "hello"',
