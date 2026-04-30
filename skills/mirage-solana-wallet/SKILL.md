@@ -98,6 +98,7 @@ mirage ows sign message --wallet agent-treasury --chain solana --message "hello"
 - `mirage fund` is a receive/top-up flow, not a send flow.
 - `mirage transfer` defaults to mainnet USDC and private visibility; set `--visibility public` to opt out of private routing.
 - `mirage swap` signs and sends; use the quote endpoint directly for quote-only requests before asking the user to confirm execution.
+- Do not pass `--yes` to `mirage swap`; it is not supported. After user confirmation, run `mirage swap` without `--yes`.
 - If the user only supplies a recipient wallet name, resolve it with `mirage address` before sending.
 - Create a brand-new named wallet explicitly with `mirage ows wallet create --name <wallet>` before using it in other commands.
 - `mirage invoke` defaults to the on-chain Anchor IDL PDA. Try the bare `mirage invoke <program-id>` form first; only ask the user for a local IDL when Mirage reports that no on-chain IDL is published.
