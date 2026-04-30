@@ -35,7 +35,8 @@
           "version": {
             "type": "string",
             "enum": [
-              "legacy"
+              "legacy",
+              "v0"
             ]
           },
           "transactionBase64": {
@@ -457,6 +458,10 @@
             "maximum": 15,
             "example": 1,
             "description": "Optional. Private transfer only. Defaults to 1. Must be between 1 and 15."
+          },
+          "legacy": {
+            "type": "boolean",
+            "description": "Optional. Defaults to false. When true, skips lookup-table compilation and returns a legacy transaction."
           }
         },
         "required": [
@@ -548,6 +553,400 @@
           "transferQueue",
           "initialized"
         ]
+      },
+      "SwapQuoteResponse": {
+        "type": "object",
+        "properties": {
+          "inputMint": {
+            "type": "string"
+          },
+          "inAmount": {
+            "type": "string",
+            "pattern": "^\\d+$"
+          },
+          "outputMint": {
+            "type": "string"
+          },
+          "outAmount": {
+            "type": "string",
+            "pattern": "^\\d+$"
+          },
+          "otherAmountThreshold": {
+            "type": "string",
+            "pattern": "^\\d+$"
+          },
+          "swapMode": {
+            "$ref": "#/components/schemas/SwapMode"
+          },
+          "slippageBps": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "priceImpactPct": {
+            "type": "string"
+          },
+          "routePlan": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "swapInfo": {
+                  "type": "object",
+                  "properties": {
+                    "ammKey": {
+                      "type": "string"
+                    },
+                    "inputMint": {
+                      "type": "string"
+                    },
+                    "outputMint": {
+                      "type": "string"
+                    },
+                    "inAmount": {
+                      "type": "string",
+                      "pattern": "^\\d+$"
+                    },
+                    "outAmount": {
+                      "type": "string",
+                      "pattern": "^\\d+$"
+                    },
+                    "label": {
+                      "type": "string"
+                    },
+                    "outAmountAfterSlippage": {
+                      "type": "string",
+                      "pattern": "^\\d+$"
+                    }
+                  },
+                  "required": [
+                    "ammKey",
+                    "inputMint",
+                    "outputMint",
+                    "inAmount",
+                    "outAmount",
+                    "label"
+                  ],
+                  "additionalProperties": {}
+                },
+                "percent": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "bps": {
+                  "type": [
+                    "integer",
+                    "null"
+                  ],
+                  "minimum": 0
+                }
+              },
+              "required": [
+                "swapInfo",
+                "percent",
+                "bps"
+              ],
+              "additionalProperties": {}
+            }
+          },
+          "instructionVersion": {
+            "$ref": "#/components/schemas/InstructionVersion"
+          },
+          "platformFee": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "amount": {
+                "type": "string",
+                "pattern": "^\\d+$"
+              },
+              "feeBps": {
+                "type": "integer",
+                "minimum": 0
+              }
+            },
+            "required": [
+              "amount",
+              "feeBps"
+            ],
+            "additionalProperties": {}
+          },
+          "contextSlot": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "timeTaken": {
+            "type": "number"
+          },
+          "additionalIntermediateTokens": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "inputMint",
+          "inAmount",
+          "outputMint",
+          "outAmount",
+          "otherAmountThreshold",
+          "swapMode",
+          "slippageBps",
+          "priceImpactPct",
+          "routePlan"
+        ],
+        "additionalProperties": {}
+      },
+      "SwapMode": {
+        "type": "string",
+        "enum": [
+          "ExactIn",
+          "ExactOut"
+        ]
+      },
+      "InstructionVersion": {
+        "type": [
+          "string",
+          "null"
+        ],
+        "enum": [
+          "V1",
+          "V2",
+          null
+        ]
+      },
+      "SwapResponse": {
+        "type": "object",
+        "properties": {
+          "swapTransaction": {
+            "type": "string"
+          },
+          "lastValidBlockHeight": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "prioritizationFeeLamports": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "privateTransfer": {
+            "type": "object",
+            "properties": {
+              "stashAta": {
+                "type": "string"
+              },
+              "hydraCrankPda": {
+                "type": "string"
+              },
+              "shuttleId": {
+                "type": "integer",
+                "minimum": 0
+              }
+            },
+            "required": [
+              "stashAta",
+              "hydraCrankPda",
+              "shuttleId"
+            ],
+            "description": "Present when visibility=private. Diagnostic metadata about the appended schedule_private_transfer instruction."
+          }
+        },
+        "required": [
+          "swapTransaction"
+        ],
+        "additionalProperties": {}
+      },
+      "SwapRequest": {
+        "type": "object",
+        "properties": {
+          "userPublicKey": {
+            "type": "string",
+            "example": "3rXKwQ1kpjBd5tdcco32qsvqUh1BnZjcYnS5kYrP7AYE",
+            "description": "Public key of the wallet that will sign the swap transaction."
+          },
+          "quoteResponse": {
+            "$ref": "#/components/schemas/SwapQuoteResponse"
+          },
+          "payer": {
+            "type": "string",
+            "example": "3rXKwQ1kpjBd5tdcco32qsvqUh1BnZjcYnS5kYrP7AYE",
+            "description": "Optional fee payer for transaction fees and rent."
+          },
+          "wrapAndUnwrapSol": {
+            "type": "boolean",
+            "example": true,
+            "description": "Automatically wrap and unwrap native SOL when needed."
+          },
+          "useSharedAccounts": {
+            "type": "boolean",
+            "example": true,
+            "description": "Allow shared accounts for intermediate routing state."
+          },
+          "feeAccount": {
+            "type": "string",
+            "example": "6QxLzE2KfM1NAB7sTzUPk4cNsA6V9fB3eYq9s6d9r9hP",
+            "description": "Optional initialized token account used to collect platform fees."
+          },
+          "trackingAccount": {
+            "type": "string",
+            "example": "Bt9oNR5cCtnfuMmXgWELd6q5i974PdEMQDUE55nBC57L",
+            "description": "Optional public key used for downstream transaction tracking."
+          },
+          "prioritizationFeeLamports": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "priorityLevelWithMaxLamports": {
+                    "type": "object",
+                    "properties": {
+                      "priorityLevel": {
+                        "type": "string"
+                      },
+                      "maxLamports": {
+                        "type": "integer",
+                        "minimum": 0
+                      },
+                      "global": {
+                        "type": "boolean"
+                      }
+                    },
+                    "required": [
+                      "priorityLevel",
+                      "maxLamports"
+                    ]
+                  },
+                  "jitoTipLamports": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "jitoTipLamportsWithPayer": {
+                    "type": "integer",
+                    "minimum": 0
+                  }
+                },
+                "additionalProperties": {}
+              }
+            ],
+            "description": "Optional priority fee configuration or fixed lamport amount."
+          },
+          "asLegacyTransaction": {
+            "type": "boolean",
+            "example": false,
+            "description": "Build a legacy transaction instead of a versioned one."
+          },
+          "destinationTokenAccount": {
+            "type": "string",
+            "example": "6QxLzE2KfM1NAB7sTzUPk4cNsA6V9fB3eYq9s6d9r9hP",
+            "description": "Optional destination token account for the output mint."
+          },
+          "nativeDestinationAccount": {
+            "type": "string",
+            "example": "Bt9oNR5cCtnfuMmXgWELd6q5i974PdEMQDUE55nBC57L",
+            "description": "Optional destination account for native SOL output."
+          },
+          "dynamicComputeUnitLimit": {
+            "type": "boolean",
+            "example": false,
+            "description": "Estimate compute usage and set the compute unit limit automatically."
+          },
+          "skipUserAccountsRpcCalls": {
+            "type": "boolean",
+            "example": false,
+            "description": "Skip extra RPC checks for required user accounts."
+          },
+          "dynamicSlippage": {
+            "type": "boolean",
+            "example": false,
+            "description": "Let the upstream swap builder overwrite slippage on the transaction."
+          },
+          "computeUnitPriceMicroLamports": {
+            "type": "integer",
+            "minimum": 0,
+            "example": 1000,
+            "description": "Optional exact compute unit price in micro-lamports."
+          },
+          "blockhashSlotsToExpiry": {
+            "type": "integer",
+            "minimum": 0,
+            "example": 10,
+            "description": "Optional transaction expiry window in slots."
+          },
+          "positiveSlippage": {
+            "type": "object",
+            "properties": {
+              "bps": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "feeAccount": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "bps"
+            ],
+            "additionalProperties": {},
+            "description": "Optional positive slippage collection settings."
+          },
+          "visibility": {
+            "type": "string",
+            "enum": [
+              "public",
+              "private"
+            ],
+            "example": "public",
+            "description": "Public swap (default) proxies Jupiter/Metis as-is. `private` forces Jupiter's output into a program-owned stash ATA and appends a scheduled private transfer."
+          },
+          "destination": {
+            "type": "string",
+            "example": "3rXKwQ1kpjBd5tdcco32qsvqUh1BnZjcYnS5kYrP7AYE",
+            "description": "Final private-transfer recipient (wallet pubkey). Required when visibility=private."
+          },
+          "minDelayMs": {
+            "type": "string",
+            "pattern": "^\\d+$",
+            "example": "0",
+            "description": "Earliest (ms) the queued transfer may settle. Required when visibility=private."
+          },
+          "maxDelayMs": {
+            "type": "string",
+            "pattern": "^\\d+$",
+            "example": "60000",
+            "description": "Latest (ms) the queued transfer may settle. Required when visibility=private."
+          },
+          "split": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "example": 1,
+            "description": "Number of queue entries to split the transfer across. Required when visibility=private. Must be between 1 and 14."
+          },
+          "clientRefId": {
+            "type": "string",
+            "pattern": "^\\d+$",
+            "example": "0",
+            "description": "Optional u64 client correlation id attached to each queued split."
+          },
+          "validator": {
+            "type": "string",
+            "example": "MAS1Dt9qreoRMQ14YQuhg8UTZMMzDdKhmkZMECCzk57",
+            "description": "Optional validator pubkey for the transfer-queue PDA. Defaults to the well-known MagicBlock validator."
+          }
+        },
+        "required": [
+          "userPublicKey",
+          "quoteResponse"
+        ],
+        "additionalProperties": {}
       },
       "McpResponse": {
         "type": "object",
@@ -841,7 +1240,20 @@
         "tags": [
           "SPL"
         ],
-        "description": "Transfer SPL tokens publicly or privately trough an ephemeral rollup.",
+        "description": "Transfer SPL tokens publicly or privately through an ephemeral rollup.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "example": "Bearer 1234567890",
+              "description": "Optional. Authentication token for requests that need to connect to the Private Ephemeral Rollup."
+            },
+            "required": false,
+            "description": "Optional. Authentication token for requests that need to connect to the Private Ephemeral Rollup.",
+            "name": "authorization",
+            "in": "header"
+          }
+        ],
         "requestBody": {
           "required": true,
           "description": "Transfer request",
@@ -897,10 +1309,19 @@
           {
             "schema": {
               "type": "string",
-              "example": "Bt9oNR5cCtnfuMmXgWELd6q5i974PdEMQDUE55nBC57L"
+              "example": "So11111111111111111111111111111111111111112"
             },
             "required": true,
             "name": "address",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "example": "So11111111111111111111111111111111111111112"
+            },
+            "required": true,
+            "name": "mint",
             "in": "query"
           },
           {
@@ -923,15 +1344,6 @@
             "required": false,
             "description": "Optional. Use `mainnet` for BASE_RPC_URL and EPHEMERAL_RPC_URL, `devnet` for BASE_DEVNET_RPC_URL and EPHEMERAL_DEVNET_RPC_URL, or provide a custom http(s) RPC URL to override the base RPC while keeping the configured ephemeral RPC.",
             "name": "cluster",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": "string",
-              "example": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
-            },
-            "required": true,
-            "name": "mint",
             "in": "query"
           }
         ],
@@ -986,10 +1398,19 @@
           {
             "schema": {
               "type": "string",
-              "example": "Bt9oNR5cCtnfuMmXgWELd6q5i974PdEMQDUE55nBC57L"
+              "example": "So11111111111111111111111111111111111111112"
             },
             "required": true,
             "name": "address",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "example": "So11111111111111111111111111111111111111112"
+            },
+            "required": true,
+            "name": "mint",
             "in": "query"
           },
           {
@@ -1017,11 +1438,13 @@
           {
             "schema": {
               "type": "string",
-              "example": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+              "example": "Bearer 1234567890",
+              "description": "Required. Authentication token for private-balance requests."
             },
             "required": true,
-            "name": "mint",
-            "in": "query"
+            "description": "Required. Authentication token for private-balance requests.",
+            "name": "authorization",
+            "in": "header"
           }
         ],
         "responses": {
@@ -1148,6 +1571,720 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ValidationErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/spl/challenge": {
+      "get": {
+        "tags": [
+          "SPL"
+        ],
+        "description": "Generate a challenge string for the wallet to sign.",
+        "parameters": [
+          {
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "mainnet",
+                    "devnet"
+                  ]
+                },
+                {
+                  "type": "string"
+                }
+              ],
+              "example": "mainnet",
+              "description": "Optional. Use `mainnet` for BASE_RPC_URL and EPHEMERAL_RPC_URL, `devnet` for BASE_DEVNET_RPC_URL and EPHEMERAL_DEVNET_RPC_URL, or provide a custom http(s) RPC URL to override the base RPC while keeping the configured ephemeral RPC."
+            },
+            "required": false,
+            "description": "Optional. Use `mainnet` for BASE_RPC_URL and EPHEMERAL_RPC_URL, `devnet` for BASE_DEVNET_RPC_URL and EPHEMERAL_DEVNET_RPC_URL, or provide a custom http(s) RPC URL to override the base RPC while keeping the configured ephemeral RPC.",
+            "name": "cluster",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "example": "Bt9oNR5cCtnfuMmXgWELd6q5i974PdEMQDUE55nBC57L",
+              "description": "The public key of the wallet that will read private data"
+            },
+            "required": true,
+            "description": "The public key of the wallet that will read private data",
+            "name": "pubkey",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "boolean",
+              "default": false
+            },
+            "required": false,
+            "name": "mock",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Challenge string",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "challenge": {
+                      "type": "string",
+                      "example": "1234567890",
+                      "description": "The challenge string generated by the Private Ephemeral Rollup"
+                    }
+                  },
+                  "required": [
+                    "challenge"
+                  ]
+                },
+                "example": {
+                  "challenge": "1234567890"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/spl/login": {
+      "post": {
+        "tags": [
+          "SPL"
+        ],
+        "description": "Login the wallet to the Private Ephemeral Rollup.",
+        "requestBody": {
+          "required": true,
+          "description": "Login request",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "cluster": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "enum": [
+                          "mainnet",
+                          "devnet"
+                        ]
+                      },
+                      {
+                        "type": "string"
+                      }
+                    ],
+                    "example": "mainnet",
+                    "description": "Optional. Use `mainnet` for BASE_RPC_URL and EPHEMERAL_RPC_URL, `devnet` for BASE_DEVNET_RPC_URL and EPHEMERAL_DEVNET_RPC_URL, or provide a custom http(s) RPC URL to override the base RPC while keeping the configured ephemeral RPC."
+                  },
+                  "pubkey": {
+                    "type": "string",
+                    "example": "Bt9oNR5cCtnfuMmXgWELd6q5i974PdEMQDUE55nBC57L",
+                    "description": "The public key of the wallet that will read private data"
+                  },
+                  "challenge": {
+                    "type": "string",
+                    "example": "1234567890",
+                    "description": "The challenge string generated by the Private Ephemeral Rollup"
+                  },
+                  "signature": {
+                    "type": "string",
+                    "example": "1234567890",
+                    "description": "The signature of the challenge by the wallet"
+                  },
+                  "mock": {
+                    "type": "boolean",
+                    "default": false
+                  }
+                },
+                "required": [
+                  "pubkey",
+                  "challenge",
+                  "signature"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Login response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "token": {
+                      "type": "string",
+                      "example": "1234567890",
+                      "description": "The authentication token provided by the Private Ephemeral Rollup"
+                    }
+                  },
+                  "required": [
+                    "token"
+                  ]
+                },
+                "example": {
+                  "token": "1234567890"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Signature verification failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/swap/quote": {
+      "get": {
+        "tags": [
+          "Swap"
+        ],
+        "description": "Get a swap quote.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "example": "So11111111111111111111111111111111111111112",
+              "description": "Input token mint address."
+            },
+            "required": true,
+            "description": "Input token mint address.",
+            "name": "inputMint",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "example": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+              "description": "Output token mint address."
+            },
+            "required": true,
+            "description": "Output token mint address.",
+            "name": "outputMint",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d+$",
+              "example": "1000000",
+              "description": "Raw amount to swap before decimals are applied."
+            },
+            "required": true,
+            "description": "Raw amount to swap before decimals are applied.",
+            "name": "amount",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "example": 50,
+              "description": "Slippage threshold in basis points."
+            },
+            "required": false,
+            "description": "Slippage threshold in basis points.",
+            "name": "slippageBps",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/SwapMode"
+                },
+                {
+                  "example": "ExactIn",
+                  "description": "Use `ExactIn` for fixed input amount or `ExactOut` for fixed output amount."
+                }
+              ]
+            },
+            "required": false,
+            "description": "Use `ExactIn` for fixed input amount or `ExactOut` for fixed output amount.",
+            "name": "swapMode",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "example": "Raydium,Orca+V2",
+              "description": "Optional comma-separated list of DEX labels to include."
+            },
+            "required": false,
+            "description": "Optional comma-separated list of DEX labels to include.",
+            "name": "dexes",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "example": "Meteora+DLMM",
+              "description": "Optional comma-separated list of DEX labels to exclude."
+            },
+            "required": false,
+            "description": "Optional comma-separated list of DEX labels to exclude.",
+            "name": "excludeDexes",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "boolean",
+              "example": true,
+              "description": "Restrict intermediate tokens to a more stable set."
+            },
+            "required": false,
+            "description": "Restrict intermediate tokens to a more stable set.",
+            "name": "restrictIntermediateTokens",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "boolean",
+              "example": false,
+              "description": "Limit routing to a single hop."
+            },
+            "required": false,
+            "description": "Limit routing to a single hop.",
+            "name": "onlyDirectRoutes",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "boolean",
+              "example": false,
+              "description": "Request a legacy transaction-compatible route."
+            },
+            "required": false,
+            "description": "Request a legacy transaction-compatible route.",
+            "name": "asLegacyTransaction",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "example": 20,
+              "description": "Optional platform fee in basis points."
+            },
+            "required": false,
+            "description": "Optional platform fee in basis points.",
+            "name": "platformFeeBps",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "example": 64,
+              "description": "Approximate maximum account budget for the route."
+            },
+            "required": false,
+            "description": "Approximate maximum account budget for the route.",
+            "name": "maxAccounts",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/InstructionVersion"
+                },
+                {
+                  "example": "V1",
+                  "description": "Instruction format to target."
+                }
+              ]
+            },
+            "required": false,
+            "description": "Instruction format to target.",
+            "name": "instructionVersion",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "boolean",
+              "example": false,
+              "description": "Keep for compatibility with upstream quote parameters."
+            },
+            "required": false,
+            "description": "Keep for compatibility with upstream quote parameters.",
+            "name": "dynamicSlippage",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "boolean",
+              "example": false,
+              "description": "Exclude routes that are incompatible with Jito bundles."
+            },
+            "required": false,
+            "description": "Exclude routes that are incompatible with Jito bundles.",
+            "name": "forJitoBundle",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "boolean",
+              "example": false,
+              "description": "Allow dynamic selection of intermediate tokens."
+            },
+            "required": false,
+            "description": "Allow dynamic selection of intermediate tokens.",
+            "name": "supportDynamicIntermediateTokens",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Swap quote",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SwapQuoteResponse"
+                },
+                "example": {
+                  "inputMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+                  "inAmount": "1000000",
+                  "outputMint": "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB",
+                  "outAmount": "999519",
+                  "otherAmountThreshold": "994522",
+                  "swapMode": "ExactIn",
+                  "slippageBps": 50,
+                  "platformFee": null,
+                  "priceImpactPct": "0",
+                  "routePlan": [
+                    {
+                      "swapInfo": {
+                        "ammKey": "DB3sUCP2H4icbeKmK6yb6nUxU5ogbcRHtGuq7W2RoRwW",
+                        "label": "HumidiFi",
+                        "inputMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+                        "outputMint": "So11111111111111111111111111111111111111112",
+                        "inAmount": "1000000",
+                        "outAmount": "11687625",
+                        "updateContextSlot": "414697032"
+                      },
+                      "percent": 100,
+                      "bps": null
+                    },
+                    {
+                      "swapInfo": {
+                        "ammKey": "4rJggoVMajEUtipev1XhSMjESYk8Zibz6CDHPtUe1mem",
+                        "label": "GoonFi V2",
+                        "inputMint": "So11111111111111111111111111111111111111112",
+                        "outputMint": "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB",
+                        "inAmount": "11687625",
+                        "outAmount": "999519",
+                        "updateContextSlot": "414697032"
+                      },
+                      "percent": 100,
+                      "bps": null
+                    }
+                  ],
+                  "contextSlot": 414697033,
+                  "timeTaken": 0.001218002,
+                  "swapUsdValue": "1",
+                  "mostReliableAmmsQuoteReport": {
+                    "info": {
+                      "BZtgQEyS6eXUXicYPHecYQ7PybqodXQMvkjUbP4R8mUU": "999357",
+                      "Czfq3xZZDmsdGdUyrNLtRhGc47cXcZtLG4crryfu44zE": "11681475",
+                      "8sjV1AqBFvFuADBCQHhotaRq5DFFYSjjg1jMyVWMqXvZ": "999504"
+                    }
+                  },
+                  "longtailMarketQuoteReport": null,
+                  "useIncurredSlippageForQuoting": null,
+                  "useRewards": null,
+                  "otherRoutePlans": null,
+                  "loadedLongtailToken": false,
+                  "instructionVersion": null
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Configuration error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Upstream error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/swap/swap": {
+      "post": {
+        "tags": [
+          "Swap"
+        ],
+        "description": "Build an unsigned swap transaction from a quote.\n\nSupports two visibility modes:\n\n- **`visibility: \"public\"`** (default) — pure pass-through to the Jupiter/Metis\n  upstream. The returned transaction is whatever the upstream produces.\n- **`visibility: \"private\"`** — the server forces Jupiter's output into a\n  program-owned stash ATA (deterministically derived from `(userPublicKey,\n  quoteResponse.outputMint)`), prepends an idempotent ATA-create, and appends a\n  `schedule_private_transfer` instruction that registers a one-shot Hydra\n  crank. When the crank fires, it self-CPIs into the on-chain private-transfer\n  flow to deliver the swapped tokens to `destination` with the requested\n  delay/split policy. The returned transaction is a v0 `VersionedTransaction`\n  that is still unsigned — the client signs and submits.\n\nWhen `visibility = \"private\"`, the fields `destination`, `minDelayMs`,\n`maxDelayMs`, and `split` are **required**. `clientRefId` and `validator` are\noptional. Explicitly setting `destinationTokenAccount` to anything other than\nthe server-derived stash ATA returns 400.",
+        "requestBody": {
+          "required": true,
+          "description": "Swap request",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SwapRequest"
+              },
+              "examples": {
+                "private": {
+                  "summary": "Private swap + scheduled transfer",
+                  "description": "Forces Jupiter's output into the program-owned stash ATA and appends schedule_private_transfer.",
+                  "value": {
+                    "userPublicKey": "3rXKwQ1kpjBd5tdcco32qsvqUh1BnZjcYnS5kYrP7AYE",
+                    "quoteResponse": {
+                      "inputMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+                      "inAmount": "1000000",
+                      "outputMint": "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB",
+                      "outAmount": "999519",
+                      "otherAmountThreshold": "994522",
+                      "swapMode": "ExactIn",
+                      "slippageBps": 50,
+                      "platformFee": null,
+                      "priceImpactPct": "0",
+                      "routePlan": [
+                        {
+                          "swapInfo": {
+                            "ammKey": "DB3sUCP2H4icbeKmK6yb6nUxU5ogbcRHtGuq7W2RoRwW",
+                            "label": "HumidiFi",
+                            "inputMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+                            "outputMint": "So11111111111111111111111111111111111111112",
+                            "inAmount": "1000000",
+                            "outAmount": "11687625",
+                            "updateContextSlot": "414697032"
+                          },
+                          "percent": 100,
+                          "bps": null
+                        },
+                        {
+                          "swapInfo": {
+                            "ammKey": "4rJggoVMajEUtipev1XhSMjESYk8Zibz6CDHPtUe1mem",
+                            "label": "GoonFi V2",
+                            "inputMint": "So11111111111111111111111111111111111111112",
+                            "outputMint": "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB",
+                            "inAmount": "11687625",
+                            "outAmount": "999519",
+                            "updateContextSlot": "414697032"
+                          },
+                          "percent": 100,
+                          "bps": null
+                        }
+                      ],
+                      "contextSlot": 414697033,
+                      "timeTaken": 0.001218002,
+                      "swapUsdValue": "1",
+                      "mostReliableAmmsQuoteReport": {
+                        "info": {
+                          "BZtgQEyS6eXUXicYPHecYQ7PybqodXQMvkjUbP4R8mUU": "999357",
+                          "Czfq3xZZDmsdGdUyrNLtRhGc47cXcZtLG4crryfu44zE": "11681475",
+                          "8sjV1AqBFvFuADBCQHhotaRq5DFFYSjjg1jMyVWMqXvZ": "999504"
+                        }
+                      },
+                      "longtailMarketQuoteReport": null,
+                      "useIncurredSlippageForQuoting": null,
+                      "useRewards": null,
+                      "otherRoutePlans": null,
+                      "loadedLongtailToken": false,
+                      "instructionVersion": null
+                    },
+                    "visibility": "private",
+                    "destination": "7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU",
+                    "minDelayMs": "0",
+                    "maxDelayMs": "0",
+                    "split": 1
+                  }
+                },
+                "public": {
+                  "summary": "Public swap (default behaviour, upstream proxy)",
+                  "value": {
+                    "userPublicKey": "3rXKwQ1kpjBd5tdcco32qsvqUh1BnZjcYnS5kYrP7AYE",
+                    "quoteResponse": {
+                      "inputMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+                      "inAmount": "1000000",
+                      "outputMint": "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB",
+                      "outAmount": "999519",
+                      "otherAmountThreshold": "994522",
+                      "swapMode": "ExactIn",
+                      "slippageBps": 50,
+                      "platformFee": null,
+                      "priceImpactPct": "0",
+                      "routePlan": [
+                        {
+                          "swapInfo": {
+                            "ammKey": "DB3sUCP2H4icbeKmK6yb6nUxU5ogbcRHtGuq7W2RoRwW",
+                            "label": "HumidiFi",
+                            "inputMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+                            "outputMint": "So11111111111111111111111111111111111111112",
+                            "inAmount": "1000000",
+                            "outAmount": "11687625",
+                            "updateContextSlot": "414697032"
+                          },
+                          "percent": 100,
+                          "bps": null
+                        },
+                        {
+                          "swapInfo": {
+                            "ammKey": "4rJggoVMajEUtipev1XhSMjESYk8Zibz6CDHPtUe1mem",
+                            "label": "GoonFi V2",
+                            "inputMint": "So11111111111111111111111111111111111111112",
+                            "outputMint": "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB",
+                            "inAmount": "11687625",
+                            "outAmount": "999519",
+                            "updateContextSlot": "414697032"
+                          },
+                          "percent": 100,
+                          "bps": null
+                        }
+                      ],
+                      "contextSlot": 414697033,
+                      "timeTaken": 0.001218002,
+                      "swapUsdValue": "1",
+                      "mostReliableAmmsQuoteReport": {
+                        "info": {
+                          "BZtgQEyS6eXUXicYPHecYQ7PybqodXQMvkjUbP4R8mUU": "999357",
+                          "Czfq3xZZDmsdGdUyrNLtRhGc47cXcZtLG4crryfu44zE": "11681475",
+                          "8sjV1AqBFvFuADBCQHhotaRq5DFFYSjjg1jMyVWMqXvZ": "999504"
+                        }
+                      },
+                      "longtailMarketQuoteReport": null,
+                      "useIncurredSlippageForQuoting": null,
+                      "useRewards": null,
+                      "otherRoutePlans": null,
+                      "loadedLongtailToken": false,
+                      "instructionVersion": null
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Swap transaction",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SwapResponse"
+                },
+                "examples": {
+                  "private": {
+                    "summary": "Response for visibility=private (with diagnostic block)",
+                    "value": {
+                      "swapTransaction": "AQABA...base64 with appended ATA-create + schedule_private_transfer...",
+                      "lastValidBlockHeight": 318120000,
+                      "privateTransfer": {
+                        "stashAta": "9mZP3xKHvVqXd3xtk72nSeEwJjmsgqmXvUDfwNA9BM4K",
+                        "hydraCrankPda": "HyDraCrNkPdA11111111111111111111111111111111",
+                        "shuttleId": 2147483647
+                      }
+                    }
+                  },
+                  "public": {
+                    "summary": "Response for visibility=public",
+                    "value": {
+                      "swapTransaction": "AQABA...base64...",
+                      "lastValidBlockHeight": 318120000
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request (missing or conflicting private-transfer fields)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Configuration error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Upstream error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
                 }
               }
             }

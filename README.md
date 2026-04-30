@@ -31,11 +31,12 @@ Mirage also uses the shared OWS config at `~/.ows/config.json` for its default S
 - `mirage balance` shows the wallet balance through `ows fund balance`
 - `mirage fund` opens `https://one.magicblock.app/` in the browser with `rcv=<wallet-pubkey>`
 - `mirage transfer` accepts UI amounts like `0.1`, defaults `--mint` to mainnet USDC, resolves mint decimals over Solana RPC, builds a transaction from the MagicBlock payments API, signs it with OWS, and sends it on Solana
+- `mirage swap` accepts UI amounts, fetches a MagicBlock swap quote, builds the unsigned swap transaction, signs it with OWS, and sends it on Solana
 - `mirage ows ...` forwards directly to the bundled `ows` CLI
 - `mirage api ...` exposes low-level commands generated from the checked-in OpenAPI schema
 - `mirage invoke ...` allow to create arbitrary transaction using a program IDL (onchain or manually provided)
 
-`mirage address`, `mirage balance`, `mirage fund`, and `mirage transfer` default to the `agent-treasury` wallet. If `agent-treasury` does not exist yet, Mirage creates it automatically before running the command. Passing `--wallet <name>` uses that existing OWS wallet instead.
+`mirage address`, `mirage balance`, `mirage fund`, `mirage transfer`, and `mirage swap` default to the `agent-treasury` wallet. If `agent-treasury` does not exist yet, Mirage creates it automatically before running the command. Passing `--wallet <name>` uses that existing OWS wallet instead.
 
 ## Examples
 
@@ -59,6 +60,12 @@ mirage transfer \
   --mint EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v \
   --amount 0.1
 
+mirage swap \
+  --input-mint EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v \
+  --output-mint Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB \
+  --amount 1 \
+  --slippage-bps 50
+
 mirage ows sign message --wallet agent-treasury --chain solana --message "hello"
 
 mirage invoke 852a53jomx7dGmkpbFPGXNJymRxywo3WsH1vusNASJRr --cluster devnet
@@ -70,7 +77,7 @@ This repo includes a reusable agentic Solana wallet skill in [skills/mirage-sola
 
 - Install it from GitHub with `npx skills add magicblock-labs/mirage`.
 - To install this specific skill non-interactively, use `npx skills add magicblock-labs/mirage --skill mirage-solana-wallet`.
-- The skill covers creating Solana wallets with `mirage ows wallet create`, funding wallets through `mirage fund`, invoking any Anchor program by its IDL with `mirage invoke` (interactive or via non-interactive `--show-idl` / `--ix` / `--arg` / `--account` / `--dry-run` flags for agents and scripts), sending public or private SPL transfers with `mirage transfer`, and signing arbitrary Solana transactions with `mirage ows sign tx`.
+- The skill covers creating Solana wallets with `mirage ows wallet create`, funding wallets through `mirage fund`, invoking any Anchor program by its IDL with `mirage invoke` (interactive or via non-interactive `--show-idl` / `--ix` / `--arg` / `--account` / `--dry-run` flags for agents and scripts), sending public or private SPL transfers with `mirage transfer`, building swaps with `mirage swap`, and signing arbitrary Solana transactions with `mirage ows sign tx`.
 
 ## Development
 

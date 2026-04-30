@@ -1,7 +1,7 @@
 interface:
   display_name: "Mirage Solana Wallet"
-  short_description: "Operate a Solana wallet: create, fund, invoke any Anchor program by IDL, and transfer (public or private)"
-  default_prompt: "Use $mirage-solana-wallet to manage Mirage wallets, invoke Solana programs by their Anchor IDL, send public or private transfers, or sign other Solana transactions safely."
+  short_description: "Operate a Solana wallet: create, fund, quote swaps, invoke programs with an IDL, and transfer"
+  default_prompt: "Use $mirage-solana-wallet to manage Mirage wallets, quote or execute swaps, invoke Solana programs by their Anchor IDL, send public or private transfers, or sign other Solana transactions safely."
 
 policy:
   allow_implicit_invocation: true

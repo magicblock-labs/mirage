@@ -70,7 +70,7 @@ function collectParameterOptions(schemaDocument, parameters) {
   return parameters.flatMap((rawParameter) => {
     const parameter = resolveReference(schemaDocument, rawParameter);
 
-    if (parameter.in !== "query" && parameter.in !== "path") {
+    if (parameter.in !== "header" && parameter.in !== "query" && parameter.in !== "path") {
       return [];
     }
 
@@ -264,7 +264,7 @@ function isHttpMethod(value) {
 
 function renderGeneratedCli(commands) {
   return [
-    "export type GeneratedCommandOptionLocation = \"body\" | \"path\" | \"query\";",
+    "export type GeneratedCommandOptionLocation = \"body\" | \"header\" | \"path\" | \"query\";",
     "export type GeneratedCommandOptionType = \"boolean\" | \"integer\" | \"string\";",
     "",
     "export interface GeneratedCommandOption {",
