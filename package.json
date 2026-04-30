@@ -1,6 +1,6 @@
 {
   "name": "@magicblock-labs/mirage",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "CLI for MagicBlock private payments, wallet funding, and Open Wallet Standard workflows.",
   "type": "module",
   "bin": {
