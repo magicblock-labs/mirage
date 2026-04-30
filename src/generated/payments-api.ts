@@ -271,7 +271,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** @description Transfer SPL tokens publicly or privately trough an ephemeral rollup. */
+        /** @description Transfer SPL tokens publicly or privately through an ephemeral rollup. */
         post: {
             parameters: {
                 query?: never;

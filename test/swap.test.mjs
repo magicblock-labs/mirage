@@ -314,6 +314,65 @@ test("executeSwap rebuilds and retries once when the RPC rejects the blockhash",
   assert.equal(calls.sendRawTransaction, 2);
 });
 
+test("executeSwap validates private swap options before external calls", async () => {
+  const calls = {
+    fetchSwapQuote: 0,
+    getMintDecimals: 0,
+    listWallets: 0,
+    promptSecret: 0,
+  };
+
+  await assert.rejects(
+    () =>
+      executeSwap(
+        {
+          amount: "1",
+          inputMint: INPUT_MINT,
+          outputMint: OUTPUT_MINT,
+          visibility: "private",
+        },
+        {
+          buildUnsignedSwap: async () => {
+            throw new Error("buildUnsignedSwap should not be used");
+          },
+          fetchSwapQuote: async () => {
+            calls.fetchSwapQuote += 1;
+            throw new Error("fetchSwapQuote should not be used");
+          },
+          getMintDecimals: async () => {
+            calls.getMintDecimals += 1;
+            throw new Error("getMintDecimals should not be used");
+          },
+          getWallet: () => {
+            throw new Error("getWallet should not be used");
+          },
+          listWallets: () => {
+            calls.listWallets += 1;
+            return [];
+          },
+          promptSecret: async () => {
+            calls.promptSecret += 1;
+            return undefined;
+          },
+          runOwsCli: async () => {
+            throw new Error("runOwsCli should not be used");
+          },
+          signAndSend: () => {
+            throw new Error("signAndSend should not be used");
+          },
+        },
+      ),
+    /Private swaps require destination/,
+  );
+
+  assert.deepEqual(calls, {
+    fetchSwapQuote: 0,
+    getMintDecimals: 0,
+    listWallets: 0,
+    promptSecret: 0,
+  });
+});
+
 test("buildSwapRequest requires private swap delivery fields", () => {
   assert.throws(
     () =>

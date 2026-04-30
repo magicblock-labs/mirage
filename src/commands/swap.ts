@@ -169,9 +169,9 @@ export function registerSwapCommand(program: Command): void {
 function parsePositiveDecimal(value: string): string {
   const normalized = value.trim();
 
-  if (!/^\d+(?:\.\d+)?$/.test(normalized)) {
+  if (!/^\d+(?:\.\d+)?$/.test(normalized) || /^0+(?:\.0+)?$/.test(normalized)) {
     throw new InvalidOptionArgumentError(
-      "Expected a positive decimal value such as 1 or 0.1.",
+      "Expected a positive non-zero decimal value such as 1 or 0.1.",
     );
   }
 

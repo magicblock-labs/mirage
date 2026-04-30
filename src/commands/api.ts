@@ -71,11 +71,19 @@ async function invokeGeneratedCommand(
       : DEFAULT_PAYMENTS_API_BASE_URL;
   const url = new URL(spec.path, apiBaseUrl);
   const body: Record<string, unknown> = {};
+  const requestHeaders: Record<string, string> = {
+    Accept: "application/json",
+  };
 
   for (const option of spec.options) {
     const value = options[option.optionKey];
 
     if (value === undefined) {
+      continue;
+    }
+
+    if (option.location === "header") {
+      requestHeaders[option.name] = String(value);
       continue;
     }
 
@@ -90,7 +98,7 @@ async function invokeGeneratedCommand(
   const response = await fetch(url, {
     body: Object.keys(body).length > 0 ? JSON.stringify(body) : undefined,
     headers: {
-      Accept: "application/json",
+      ...requestHeaders,
       ...(Object.keys(body).length > 0
         ? { "Content-Type": "application/json" }
         : {}),

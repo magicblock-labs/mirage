@@ -289,14 +289,26 @@ export async function executeSwap(
   options: SwapOptions,
   runtime: SwapRuntime = defaultRuntime,
 ): Promise<SwapResult> {
+  const swapMode = options.swapMode ?? "ExactIn";
+  const visibility = options.visibility ?? "public";
+  validateSwapRequestOptions({
+    asLegacyTransaction: options.asLegacyTransaction,
+    clientRefId: options.clientRefId,
+    computeUnitPriceMicroLamports: options.computeUnitPriceMicroLamports,
+    destination: options.destination,
+    maxDelayMs: options.maxDelayMs,
+    minDelayMs: options.minDelayMs,
+    prioritizationFeeLamports: options.prioritizationFeeLamports,
+    split: options.split,
+    visibility,
+  });
+
   const walletName = await ensureWalletForDefaultBehavior(
     options.wallet ?? DEFAULT_SWAP_WALLET,
     runtime,
   );
   const wallet = runtime.getWallet(walletName, options.vaultPath);
   const from = options.from ?? findSolanaAccount(wallet).address;
-  const swapMode = options.swapMode ?? "ExactIn";
-  const visibility = options.visibility ?? "public";
   const quoteAmountMint = swapMode === "ExactOut" ? options.outputMint : options.inputMint;
   const broadcastRpcUrl = resolveSolanaRpcUrl(options.cluster, options.rpcUrl);
   const mintDecimals = await runtime.getMintDecimals(quoteAmountMint, broadcastRpcUrl);
@@ -357,7 +369,7 @@ export async function executeSwap(
     quote,
     quoteRequest,
     request,
-    rpcUrl: options.rpcUrl,
+    rpcUrl: broadcastRpcUrl,
     swapTransaction,
     txHash: sentTransaction.txHash,
   };

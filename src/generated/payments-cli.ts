@@ -2,7 +2,7 @@
  * This file is generated from the checked-in MagicBlock payments OpenAPI schema.
  * Do not edit it by hand. Run `npm run generate` instead.
  */
-export type GeneratedCommandOptionLocation = "body" | "path" | "query";
+export type GeneratedCommandOptionLocation = "body" | "header" | "path" | "query";
 export type GeneratedCommandOptionType = "boolean" | "integer" | "string";
 
 export interface GeneratedCommandOption {
@@ -357,6 +357,15 @@ export const generatedCommands: GeneratedCommandSpec[] = [
         "name": "cluster",
         "optionKey": "cluster",
         "required": false,
+        "type": "string"
+      },
+      {
+        "description": "Required. Authentication token for private-balance requests.",
+        "flag": "--authorization <value>",
+        "location": "header",
+        "name": "authorization",
+        "optionKey": "authorization",
+        "required": true,
         "type": "string"
       }
     ],
@@ -736,10 +745,19 @@ export const generatedCommands: GeneratedCommandSpec[] = [
     "path": "/v1/swap/swap"
   },
   {
-    "description": "Transfer SPL tokens publicly or privately trough an ephemeral rollup.",
+    "description": "Transfer SPL tokens publicly or privately through an ephemeral rollup.",
     "method": "post",
     "name": "transfer",
     "options": [
+      {
+        "description": "Optional. Authentication token for requests that need to connect to the Private Ephemeral Rollup.",
+        "flag": "--authorization <value>",
+        "location": "header",
+        "name": "authorization",
+        "optionKey": "authorization",
+        "required": false,
+        "type": "string"
+      },
       {
         "description": "Value for from.",
         "flag": "--from <value>",
